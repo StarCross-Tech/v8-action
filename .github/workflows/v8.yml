@@ -9,8 +9,8 @@ name: BUILD v8
 on:
   push:
     branches: [ master ]
-  watch:
-    types: started
+  # watch:
+  #   types: started
 
 env:
   PATCH_FLAG: true
