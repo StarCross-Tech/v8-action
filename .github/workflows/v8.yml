@@ -1,0 +1,90 @@
+#===================================================
+# Description: Build v8 enginer using GitHub Actions
+# Author: t1an5t
+#===================================================
+
+
+name: BUILD v8
+
+on:
+  push:
+    branches: [ master ]
+
+env:
+  PATCH_FLAG: true
+  COMMIT: a7a350012c05f644f3f373fb48d7ac72f7f60542
+  DEPOT_UPLOAD: false
+  SRC_UPLOAD: true
+  BINARY_UPLOAD: false
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-18.04 	
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+      
+    # init ubuntu1804 environment
+    - name: init env
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install pkg-config git subversion curl wget build-essential python xz-utils zip p7zip-full
+    
+    # get depot_tools
+    - name: depot_tools
+      run: |
+        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+        echo export PATH=\"\$PATH:`pwd`/depot_tools/\" >> ~/.bash_profile
+    
+    # fetch v8 source code
+    - name: fetch v8
+      run: |
+        source ~/.bash_profile
+        fetch v8
+        cd v8
+    
+    # patch source code
+    - name: patch v8
+      if: env.PATCH_FLAG == 'true' && !cancelled()
+      run: |
+        cd v8
+        git reset --hard $COMMIT
+        cd ..
+        
+    - name: build v8
+      run: |
+        source ~/.bash_profile
+        gclient sync -f
+    
+    # compress this file
+    - name: zip depot_tools
+      if: env.DEPOT_UPLOAD == 'true' && !cancelled()
+      run: |
+        zip -q -r depot_tools.zip depot_tools
+        
+    # 7zip v8 src
+    - name: 7zip v8_src
+      run: |
+        zip -q -r v8.zip v8
+        7z a v8.7z ./v8.zip -v2048m
+    
+    # upload depot_tools.zip to cowtransfer
+    - name: upload depot_tools
+      if: env.DEPOT_UPLOAD == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer cow --block 2621440 -s -p 64 --no-progress depot_tools.zip 2>&1 | tee cowtransfer.log
+        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+   
+    # upload v8.zip to cowtransfer
+    - name: upload v8_src
+      if: env.SRC_UPLOAD == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer cow --block 2621440 -s -p 64 --no-progress v8.7z.001 2>&1 | tee cowtransfer.log
+        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+        ./transfer cow --block 2621440 -s -p 64 --no-progress v8.7z.002 2>&1 | tee cowtransfer.log
+        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
