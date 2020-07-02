@@ -9,6 +9,8 @@ name: BUILD v8
 on:
   push:
     branches: [ master ]
+  watch:
+    types: started
 
 env:
   PATCH_FLAG: true
@@ -21,7 +23,8 @@ env:
 jobs:
   build:
     # The type of runner that the job will run on
-    runs-on: ubuntu-18.04 	
+    runs-on: ubuntu-18.04
+    if: github.event.repository.owner.id == github.event.sender.id 	
     
     steps:
     - name: Checkout
