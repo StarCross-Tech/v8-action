@@ -9,12 +9,12 @@ name: BUILD v8
 on:
   push:
     branches: [ master ]
-  # watch:
-  #   types: started
+  watch:
+    types: started
 
 env:
   PATCH_FLAG: true
-  COMMIT: 63cb7fb817e60e5633fb622baf18c59da7a0a682
+  COMMIT: 6dc88c191f5ecc5389dc26efa3ca0907faef3598
   DEPOT_UPLOAD: true
   SRC_UPLOAD: true
   BINARY_UPLOAD: false
